@@ -16,9 +16,9 @@ processors=48      # CPU 코어의 75%, 병렬 처리 최적화
 swap=64GB          # 메모리 부족 시 스왑 공간
 localhostForwarding=true  # 네트워크 성능 개선
 ```
-3) Docker Desktop Install 
+## Docker Desktop Install 
 
-4) NVIDIA Tool Kit Install
+## NVIDIA Tool Kit Install
 ```
 curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg
 ```
