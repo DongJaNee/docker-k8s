@@ -85,7 +85,7 @@ docker exec -it <라마 컨테이너 이름> nvidia-smi 확인
 2) Windows용 Ollama 다운로드 
 ---
 
-# Ollama가 CPU가 아닌 GPU를 사용하도록 강제하는 법 
+# 2. Ollama가 CPU가 아닌 GPU를 사용하도록 강제하는 법 
 ## 방법 1
 
 1. 기본 원리
