@@ -226,3 +226,5 @@ docker exec -it ollama ollama run llama3.2
 ### Try different models
 
 More models can be found on the [Ollama library](https://ollama.com/library).
+
+**참고 자료** : https://github.com/ollama/ollama/blob/main/
