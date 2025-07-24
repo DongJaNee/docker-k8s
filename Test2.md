@@ -74,3 +74,94 @@ export CUDA_VISIBLE_DEVICES=0
 ```
 docker exec -it <라마 컨테이너 이름> nvidia-smi 확인
 ```
+
+## 비슷한 사례 4
+
+<img width="748" height="624" alt="image" src="https://github.com/user-attachments/assets/ab75cba5-1286-46e9-ba56-3f06cd111444" />
+
+- 해결 방안 
+1) Windows 11에서 통합 그래픽 비활성화
+- 장치관리자 -> 디스플레이 어댑터 -> 통합 그래픽 장치 사용 안함 
+2) Windows용 Ollama 다운로드 
+---
+
+# Ollama가 CPU가 아닌 GPU를 사용하도록 강제하는 법 
+## 방법 1
+
+1. 기본 원리
+- Ollama는 NVIDIA GPU가 감지되면 자동으로 GPU 메모리를 우선 사용
+- GPU 메모리 부족 시 시스템 RAM으로 전환
+- 다중 GPU 지원 여부는 모델과 백엔드 (ex : llama.cpp)에 따라 다르다
+2. 단일 GPU 설정 (기본)
+  1) 명시적 GPU 지정
+```
+export CUDA_VISIBLE_DEVICES=0  # 0번 GPU만 사용
+ollama run 모델이름
+```
+  2) GPU 레이어 수 강제 설정
+```
+ollama run 모델이름 --num-gpu-layers 40  # GPU에 40개 레이어 할당
+```
+  3) 설정 파일에 옵션 추가 (~/.ollama/config.json)
+```
+{
+  "num_gpu_layers": 40,
+  "main_gpu": 0
+}
+```
+3. 다중 GPU 활용 방법 (제한적 지원)
+  1) 두 GPU 모두 인식하도록 설정
+```
+export CUDA_VISIBLE_DEVICES=0,1  # GPU 0과 1 활성화
+ollama run 모델이름
+```
+
+**※주의 : 대부분의 모델은 단일 GPU만 지원, Ollama의 기본 엔진(llama.cpp)은 완전한 다중 GPU 병렬화를 제공하지 않음**
+  2) 각 GPU별 모델 분산 실행 (간접 활용)
+```
+# 터미널 1: GPU 0 사용
+export CUDA_VISIBLE_DEVICES=0
+ollama run 모델이름
+
+# 터미널 2: GPU 1 사용
+export CUDA_VISIBLE_DEVICES=1
+ollama run 모델이름
+```
+
+  3) vLLM 등 외부 도구 사용 (권장)
+```
+# vLLM 설치 및 실행 (2개 GPU 병렬)
+pip install vllm
+python -m vllm.entrypoints.api_server --model 모델이름 --tensor-parallel-size 2
+```
+  4) GPU 사용 현황 모니터링
+```
+nvidia-smi
+```
+  5) Ollama 디버그 모드
+```
+ollama run 모델이름 --verbose
+```
+
+----
+## 방법 2
+1. 스레드 수 설정
+```
+ollama run llama3.2-vision --num-threads 1
+```
+2. GPU 레이어 수 설정
+```
+ollama run 모델이름 --num-gpu-layers 40
+```
+3. 환경 변수로 설정 (~/.ollama/config.json)
+```
+{
+  "num_threads": 1,
+  "num_gpu_layers": 40,
+  "main_gpu": 0
+}
+```
+4. GPU 선택
+```
+export CUDA_VISIBLE_DEVICES=0
+```
