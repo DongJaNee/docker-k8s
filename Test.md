@@ -1,5 +1,148 @@
 # 1. Open WebUI에서 GPU를 사용하지않고 CPU 를 사용하는 경우. 
 
-## 비슷한 사례 
+# 비슷한 사례 
 
-<img width="832" height="642" alt="image" src="https://github.com/user-attachments/assets/18e5c004-6010-4bbf-a9c0-4d972c6504c2" />
+버그 요약:
+모델을 사용하여 ollama를 백그라운드에서 실행하고 있는데, 콘솔에서는 잘 작동하고 모든 것이 빠르고 잘 작동하며 GPU를 사용합니다.
+ollama-webui를 실행하고 있는데, 도커는 사용하지 않고 Node.js와 uvicorn만 사용하며 8080 포트에서 실행 중입니다. 11343에서 실행 중인 로컬 ollama와 통신하여 모델을 사용할 수 있었습니다. 모든 것이 정상이었습니다. 질문을 하자마자 GPU를 사용하지 않아서 시간이 너무 오래 걸리는 것을 발견했습니다. 백그라운드에서 nvidia-smi로 확인해 봤지만 소용이 없었습니다. 하지만 콘솔에서 같은 질문을 하면 GPU를 사용하기 때문에 매우 빠르게 답변을 받을 수 있습니다.
+
+재현 단계:
+ollama를 백그라운드에서 실행하고 docker 없이 로컬로 ollama-webui를 시작합니다.
+
+예상 동작:
+기존 ollama 세션을 재사용하고 GPU를 사용합니다.
+
+실제 동작:
+GPU를 완전히 무시하고 CPU로 대체하여 답변하는 데 엄청나게 오랜 시간이 걸립니다.
+ollama-webui가 매번 프롬프트될 때마다 다시 생성되어 모델을 다시 로드.
+
+
+----
+# 해결 방안 
+1) Ollama_Keep_alive 사용
+- 개념 :클라이언트와 서버 간의 연결을 일정 시간 동안 유지하여, 여러 요청을 하나의 연결로 처리할 수 있게 해주는 기능.
+- Ollama 서버에서 모델을 메모리에 얼마나 오래 유지할지를 설정하는 데 사용 
+  이 설정을 조절하면 응답 속도와 메모리 사용량을 최적화 할 수 있다.
+
+```
+ex)
+docker run -d \
+  -p 11434:11434 \
+  -e OLLAMA_KEEP_ALIVE=-1 \
+  --name ollama \
+  ollama/ollama 
+```
+
+설정 값 : 
+
+
+---
+# Ollama 지원 Nvidia 그래픽 카드 
+[https://developer.nvidia.com/cuda-gpus](https://developer.nvidia.com/cuda-gpus)
+
+| Compute Capability | Family              | Cards                                                                                                       |
+| ------------------ | ------------------- | ----------------------------------------------------------------------------------------------------------- |
+| 9.0                | NVIDIA              | `H100`                                                                                                      |
+| 8.9                | GeForce RTX 40xx    | `RTX 4090` `RTX 4080` `RTX 4070 Ti` `RTX 4060 Ti`                                                           |
+|                    | NVIDIA Professional | `L4` `L40` `RTX 6000`                                                                                       |
+| 8.6                | GeForce RTX 30xx    | `RTX 3090 Ti` `RTX 3090` `RTX 3080 Ti` `RTX 3080` `RTX 3070 Ti` `RTX 3070` `RTX 3060 Ti` `RTX 3060`         |
+|                    | NVIDIA Professional | `A40` `RTX A6000` `RTX A5000` `RTX A4000` `RTX A3000` `RTX A2000` `A10` `A16` `A2`                          |
+| 8.0                | NVIDIA              | `A100` `A30`                                                                                                |
+| 7.5                | GeForce GTX/RTX     | `GTX 1650 Ti` `TITAN RTX` `RTX 2080 Ti` `RTX 2080` `RTX 2070` `RTX 2060`                                    |
+|                    | NVIDIA Professional | `T4` `RTX 5000` `RTX 4000` `RTX 3000` `T2000` `T1200` `T1000` `T600` `T500`                                 |
+|                    | Quadro              | `RTX 8000` `RTX 6000` `RTX 5000` `RTX 4000`                                                                 |
+| 7.0                | NVIDIA              | `TITAN V` `V100` `Quadro GV100`                                                                             |
+| 6.1                | NVIDIA TITAN        | `TITAN Xp` `TITAN X`                                                                                        |
+|                    | GeForce GTX         | `GTX 1080 Ti` `GTX 1080` `GTX 1070 Ti` `GTX 1070` `GTX 1060` `GTX 1050`                                     |
+|                    | Quadro              | `P6000` `P5200` `P4200` `P3200` `P5000` `P4000` `P3000` `P2200` `P2000` `P1000` `P620` `P600` `P500` `P520` |
+|                    | Tesla               | `P40` `P4`                                                                                                  |
+| 6.0                | NVIDIA              | `Tesla P100` `Quadro GP100`                                                                                 |
+| 5.2                | GeForce GTX         | `GTX TITAN X` `GTX 980 Ti` `GTX 980` `GTX 970` `GTX 960` `GTX 950`                                          |
+|                    | Quadro              | `M6000 24GB` `M6000` `M5000` `M5500M` `M4000` `M2200` `M2000` `M620`                                        |
+|                    | Tesla               | `M60` `M40`                                                                                                 |
+| 5.0                | GeForce GTX         | `GTX 750 Ti` `GTX 750` `NVS 810`                                                                            |
+|                    | Quadro              | `K2200` `K1200` `K620` `M1200` `M520` `M5000M` `M4000M` `M3000M` `M2000M` `M1000M` `K620M` `M600M` `M500M`  |
+
+--- 
+# Ollama 매개변수
+
+### Parameters
+
+- `model`: (required) the [model name](#model-names)
+- `prompt`: the prompt to generate a response for
+- `suffix`: the text after the model response
+- `images`: (optional) a list of base64-encoded images (for multimodal models such as `llava`)
+- `think`: (for thinking models) should the model think before responding?
+
+Advanced parameters (optional):
+
+- `format`: the format to return a response in. Format can be `json` or a JSON schema
+- `options`: additional model parameters listed in the documentation for the [Modelfile](./modelfile.md#valid-parameters-and-values) such as `temperature`
+- `system`: system message to (overrides what is defined in the `Modelfile`)
+- `template`: the prompt template to use (overrides what is defined in the `Modelfile`)
+- `stream`: if `false` the response will be returned as a single response object, rather than a stream of objects
+- `raw`: if `true` no formatting will be applied to the prompt. You may choose to use the `raw` parameter if you are specifying a full templated prompt in your request to the API
+- `keep_alive`: controls how long the model will stay loaded into memory following the request (default: `5m`)
+- `context` (deprecated): the context parameter returned from a previous request to `/generate`, this can be used to keep a short conversational memory
+---
+## Windows
+
+Install prerequisites:
+
+- [CMake](https://cmake.org/download/)
+- [Visual Studio 2022](https://visualstudio.microsoft.com/downloads/) including the Native Desktop Workload
+- (Optional) AMD GPU support
+    - [ROCm](https://rocm.docs.amd.com/en/latest/)
+    - [Ninja](https://github.com/ninja-build/ninja/releases)
+- (Optional) NVIDIA GPU support
+    - [CUDA SDK](https://developer.nvidia.com/cuda-downloads?target_os=Windows&target_arch=x86_64&target_version=11&target_type=exe_network)
+
+Then, configure and build the project:
+
+```shell
+cmake -B build
+cmake --build build --config Release
+```
+
+> [!IMPORTANT]
+> Building for ROCm requires additional flags:
+> ```
+> cmake -B build -G Ninja -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
+> cmake --build build --config Release
+> ```
+
+
+Lastly, run Ollama:
+
+```shell
+go run . serve
+```
+
+---
+
+## Linux
+
+Install prerequisites:
+
+- [CMake](https://cmake.org/download/) or `sudo apt install cmake` or `sudo dnf install cmake`
+- (Optional) AMD GPU support
+    - [ROCm](https://rocm.docs.amd.com/projects/install-on-linux/en/latest/install/quick-start.html)
+- (Optional) NVIDIA GPU support
+    - [CUDA SDK](https://developer.nvidia.com/cuda-downloads)
+
+> [!IMPORTANT]
+> Ensure prerequisites are in `PATH` before running CMake.
+
+
+Then, configure and build the project:
+
+```shell
+cmake -B build
+cmake --build build
+```
+
+Lastly, run Ollama:
+
+```shell
+go run . serve
+```
