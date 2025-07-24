@@ -188,4 +188,20 @@ docker exec -it ollama ollama run llama3.2
 
 More models can be found on the [Ollama library](https://ollama.com/library).
 
+---
+### GPU Selection
+
+If you have multiple NVIDIA GPUs in your system and want to limit Ollama to use
+a subset, you can set `CUDA_VISIBLE_DEVICES` to a comma separated list of GPUs.
+Numeric IDs may be used, however ordering may vary, so UUIDs are more reliable.
+You can discover the UUID of your GPUs by running `nvidia-smi -L` If you want to
+ignore the GPUs and force CPU usage, use an invalid GPU ID (e.g., "-1")
+
+### Linux Suspend Resume
+
+On linux, after a suspend/resume cycle, sometimes Ollama will fail to discover
+your NVIDIA GPU, and fallback to running on the CPU.  You can workaround this
+driver bug by reloading the NVIDIA UVM driver with `sudo rmmod nvidia_uvm &&
+sudo modprobe nvidia_uvm`
+
 **참고 자료** : https://github.com/ollama/ollama/blob/main/
