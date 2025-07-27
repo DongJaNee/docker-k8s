@@ -23,7 +23,7 @@
 ```
 # cp /var/cuda-repo-<distro>-X-Y-local/cuda-*-keyring.gpg /usr/share/keyrings/
 ```
-3) CUDA 저장소의 우선수누이를 지정하기 위해 핀 파일 추가
+3) CUDA 저장소의 우선순위를 지정하기 위해 핀 파일 추가
 ```
 $ wget https://developer.download.nvidia.com/compute/cuda/repos/<distro>/x86_64/cuda-<distro>.pin
 # mv cuda-<distro>.pin /etc/apt/preferences.d/cuda-repository-pin-600
