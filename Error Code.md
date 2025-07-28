@@ -1,13 +1,117 @@
 # 1. Open WebUI에서 GPU를 사용하지않고 CPU 를 사용하는 경우. 
 
+## Docker 및 WSL2에서 Ollama가 내 GPU를 사용하도록 하는 방법
+
+<img width="758" height="424" alt="image" src="https://github.com/user-attachments/assets/e128f15e-9e04-4db5-bccd-ac94c0b05c37" />
+
+```
+services:
+
+webui:
+
+image: ghcr.io/open-webui/open-webui:main
+
+container_name: webui
+
+ports:
+
+- 7000:8080/tcp
+
+volumes:
+
+- open-webui:/app/backend/data
+
+extra_hosts:
+
+- host.docker.internal:host-gateway
+
+depends_on:
+
+- ollama
+
+restart: unless-stopped
+
+ollama:
+
+image: ollama/ollama
+
+container_name: ollama
+
+deploy:
+
+resources:
+
+reservations:
+
+devices:
+
+- driver: nvidia
+
+count: 1
+
+capabilities:
+
+- gpu
+
+environment:
+
+- TZ=America/New_York
+
+- gpus=all
+
+expose:
+
+- 11434/tcp
+
+ports:
+
+- 11434:11434/tcp
+
+healthcheck:
+
+test: ollama --version || exit 1
+
+volumes:
+
+- ollama:/root/.ollama
+
+restart: unless-stopped
+
+volumes:
+
+ollama: null
+
+open-webui: null
+
+networks: {}
+```
+
+### Docker 빠른 시작
+※ Open WebUI가 제대로 작동하려면 WebSocket 지원이 필요. 네트워크 구성에서 WebSocket 연결이 허용되는지 확인.
+
+**Ollama가 컴퓨터에 설치되어 있다면** 다음 명령 사용 
+```
+docker run -d -p 3000:8080 --add-host=host.docker.internal:host-gateway -v open-webui:/app/backend/data --name open-webui --restart always ghcr.io/open-webui/open-webui:main
+```
+
+**Nvidia GPU 지원으로 Open WebUI를 실행하려면** 다음 명령 사용 
+```
+docker run -d -p 3000:8080 --gpus all --add-host=host.docker.internal:host-gateway -v open-webui:/app/backend/data --name open-webui --restart always ghcr.io/open-webui/open-webui:cuda
+```
+
+**Ollama와 함께 제공되는 Open WebUI**
+이 설치 방법은 Open WebUI와 Ollama를 번들로 제공하는 단일 커네팅너 이미지를 사용하므로 단일 명령으로 간편하게 설치할 수 있다. 하드웨어 설정에 따라 적절한 명령을 선택
+- **GPU 지원** : 다음 명령을 실행하여 GPU 리소스 활용
+```
+docker run -d -p 3000:8080 --gpus=all -v ollama:/root/.ollama -v open-webui:/app/backend/data --name open-webui --restart always ghcr.io/open-webui/open-webui:ollama
+```
+- **CPU에만 해당** : GPU를 사용하지 않는 경우 대신 다음 명령 사용
+```
+docker run -d -p 3000:8080 -v ollama:/root/.ollama -v open-webui:/app/backend/data --name open-webui --restart always ghcr.io/open-webui/open-webui:ollama
+```
+두 명령 모두 Open WebUI와 Ollama를 기본으로 간편하게 설치하여 모든 것을 신속하게 작동시킬 수 있다.
+
 ## 비슷한 사례 1
-
-<img width="767" height="175" alt="image" src="https://github.com/user-attachments/assets/9ecf2576-d797-404f-b774-c5872194dcd2" />
-
-- 해결 방안 : WSL에서는 Ollama를 Docker 내에서 실행하는 대신 Ollama 설치 스크립트를 사용하여 직접 설치. (GPU 요구 사항을 고려하면 이렇게 하는 것이 좋다.)
-- 다른방법 : 기본 Windows 빌드를 사용 https://www.ollama.com/download
-
-## 비슷한 사례 2
 
 <img width="747" height="847" alt="image" src="https://github.com/user-attachments/assets/8091db03-f5b9-4087-882e-ccdb3c9021eb" />
 
@@ -50,7 +154,7 @@ docker run --gpus all \
   ollama/ollama
 ```
 
-## 비슷한 사례 3 
+## 비슷한 사례 2
 
 <img width="745" height="863" alt="image" src="https://github.com/user-attachments/assets/fb0981e3-93a5-40c2-b885-0404763cfb22" />
 
@@ -75,7 +179,7 @@ export CUDA_VISIBLE_DEVICES=0,1,2,3
 docker exec -it <라마 컨테이너 이름> nvidia-smi 확인
 ```
 
-## 비슷한 사례 4
+## 비슷한 사례 3
 
 <img width="748" height="624" alt="image" src="https://github.com/user-attachments/assets/ab75cba5-1286-46e9-ba56-3f06cd111444" />
 
@@ -165,3 +269,5 @@ ollama run 모델이름 --num-gpu-layers 40
 ```
 export CUDA_VISIBLE_DEVICES=0
 ```
+
+---------
