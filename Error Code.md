@@ -68,7 +68,7 @@ docker run --gpus all \
 3) 다시 시작한 후 sudo modprobe nvidia 확인 
 4) 환경 변수 설정 (bashrc 편집)
 ```
-export CUDA_VISIBLE_DEVICES=0
+export CUDA_VISIBLE_DEVICES=0,1,2,3 
 ```
 5) 컨테이너에서 GPU 확인
 ```
