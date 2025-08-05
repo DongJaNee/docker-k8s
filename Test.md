@@ -19,3 +19,13 @@ chmod +x kubectl
 sudo mv kubectl /usr/local/bin/
 
 sudo kubeadm init --pod-network-cidr=10.244.0.0/16
+
+2. Kubernetes 설치 (minikube or k3s)
+
+# 필요한 도구 설치
+sudo apt install -y conntrack
+curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+sudo install minikube-linux-amd64 /usr/local/bin/minikube
+
+# Minikube 시작 (docker 드라이버로)
+minikube start --driver=docker
