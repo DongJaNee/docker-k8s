@@ -88,3 +88,9 @@ sudo nano /etc/rancher/k3s/k3s.yaml
 <img width="1920" height="1062" alt="image" src="https://github.com/user-attachments/assets/66324d5d-9ed9-4e74-aa66-18dbcf0ddebf" />
 
 5 Name에 사용할 이름을 적고 Environment address에 4번에서 확인했던 IP주소와 Port번호를 입력 후 Connect 하면 완료.
+
+
+## 참고 
+Portainer : https://docs.portainer.io/start/install-ce/server/kubernetes/baremetal#deploy-using-yaml-manifests
+
+Kubernetes : https://kubernetes.io/ko/docs/tasks/tools/install-kubectl-linux/
