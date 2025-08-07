@@ -24,6 +24,7 @@
 - 쿠버네티스에서 배포 가능한 가장 작은 단위, 하나 이상의 컨테이너를 묶어서 관리 
 - 파드 내의 컨테이너들은 함께 배치되고, 공유된 네트워크와 스토리지를 사용하며, 동일한 호스트에서 실
 
+-----
 참고자료 
 
 Portainer : https://docs.portainer.io/start/install-ce/server/kubernetes/baremetal#deploy-using-yaml-manifests
