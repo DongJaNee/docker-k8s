@@ -24,6 +24,7 @@ newgrp docker
 ### 2. Kubernetes 설치 (minikube or k3s)
 ```
 # 필요한 도구 설치
+sudo apt install curl
 sudo apt install -y conntrack
 curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
 sudo install minikube-linux-amd64 /usr/local/bin/minikube
