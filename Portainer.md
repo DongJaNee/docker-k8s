@@ -97,3 +97,6 @@ Portainer : https://docs.portainer.io/start/install-ce/server/kubernetes/baremet
 Kubernetes : https://kubernetes.io/docs/tutorials/cluster-management/kubelet-standalone/#prepare-the-system
 
 minikube : https://kubernetes.io/docs/tutorials/hello-minikube/
+
+minikube cluster : https://minikube.sigs.k8s.io/docs/start/?arch=%2Flinux%2Fx86-64%2Fstable%2Fbinary+download#LoadBalancer
+
