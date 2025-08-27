@@ -1,0 +1,98 @@
+sudo apt-get update
+sudo apt-get install apt-transport-https ca-certificates curl software-properties-common
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg \
+  | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" \
+  | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+sudo apt-get update
+sudo apt-get install docker-ce docker-ce-cli containerd.io
+
+systemctl enable docker
+systemctl start docker
+sudo docker version
+
+-------------------------------------------------
+
+sudo apt-get update
+# apt-transport-https may be a dummy package; if so, you can skip that package
+sudo apt-get install -y apt-transport-https ca-certificates curl gpg
+
+# If the directory `/etc/apt/keyrings` does not exist, it should be created before the curl command, read the note below.
+# sudo mkdir -p -m 755 /etc/apt/keyrings
+curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.32/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+
+# This overwrites any existing configuration in /etc/apt/sources.list.d/kubernetes.list
+echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.32/deb/ /' | sudo tee /etc/apt/sources.list.d/kubernetes.list
+
+sudo apt-get update
+sudo apt-get install -y kubelet kubeadm kubectl
+sudo apt-mark hold kubelet kubeadm kubectl	
+
+sudo systemctl enable --now kubelet
+
+systemctl stop firewalld
+systemctl disable firewalld
+
+systemctl start kubelet
+systemctl enable kubelet
+
+---------------------------------
+<containerd install>
+
+sudo apt-get update
+sudo apt-get install -y containerd.io
+
+sudo mkdir -p /etc/containerd
+sudo bash -c 'containerd config default > /etc/containerd/config.toml'
+
+# kubelet과 일치: systemd cgroup 사용
+sudo sed -i 's/SystemdCgroup = false/SystemdCgroup = true/' /etc/containerd/config.toml
+
+# (핵심) CRI 비활성 라인이 있으면 제거/주석
+sudo sed -i 's/^disabled_plugins = \["cri"\]/# disabled_plugins = \["cri"\]/' /etc/containerd/config.toml
+
+# runc v2 타입 확인(보통 기본값)
+grep -q 'runtimes.runc.runtime_type = "io.containerd.runc.v2"' /etc/containerd/config.toml || \
+  sudo sed -i 's#\(runtimes.runc\)#\1#' /etc/containerd/config.toml
+
+sudo systemctl daemon-reload
+sudo systemctl enable --now containerd
+
+ls -l /run/containerd/containerd.sock /var/run/containerd/containerd.sock 2>/dev/null
+
+<controll plane> 
+
+kubeadm init
+
+--------------------
+root@ark-2288H-V6:~# cat > token.txt 토큰 저장 worknode에서 사용 예정 
+kubeadm join 192.168.0.76:6443 --token fo39x0.qamc2suszucznswg \
+	--discovery-token-ca-cert-hash sha256:ebddbbe1bb1a4202d3efd4e426733539d86b3244a72fd2e5a910de20b8043905 
+---------------
+kubeconfig 세팅
+
+mkdir -p $HOME/.kube
+cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+chown $(id -u):$(id -g) $HOME/.kube/config   # root면 생략 가능
+# 또는 환경변수로:
+# export KUBECONFIG=/etc/kubernetes/admin.conf
+
+kubectl get nodes
+
+user에도 적용 하기 
+# root로 실행
+USER=ark
+HOME_DIR=/home/$USER
+
+# .kube 디렉터리 만들고 권한 설정
+install -d -m 700 -o $USER -g $USER $HOME_DIR/.kube
+
+# admin.conf를 해당 사용자 kubeconfig로 복사
+install -m 600 -o $USER -g $USER /etc/kubernetes/admin.conf $HOME_DIR/.kube/config
+
+# (선택) 해당 사용자로 테스트
+sudo -u $USER -H bash -lc 'kubectl cluster-info && kubectl get nodes'
+
+파드 추가 (Status --> Ready)
+kubectl apply -f https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml
+
